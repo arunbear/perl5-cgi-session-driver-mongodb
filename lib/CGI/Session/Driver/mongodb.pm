@@ -14,7 +14,7 @@ sub init {
     my $conn = MongoDB::Connection->new(%arg);
     my $db = $conn->get_database($self->{database});
     $self->{sessions} = $db->get_collection($self->{collection_name} || 'sessions');
-    $self->{sessions}->ensure_index({sid => 1});
+    $self->{sessions}->ensure_index({ sid => 1 }, { unique => true });
 }
 
 sub store {
