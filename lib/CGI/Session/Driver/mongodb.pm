@@ -21,7 +21,11 @@ sub store {
     my ($self, $sid, $datastr) = @_;
     croak "store(): usage error" unless $sid && $datastr;
     # Store $datastr, which is an already serialized string of data.
-    $self->{sessions}->save({ sid => $sid, datastr => $datastr }, {safe => 1})
+    $self->{sessions}->update(
+        { sid => $sid }, 
+        { '$set' =>  { datastr => $datastr } }, 
+        { 'upsert' => 1, safe => 1 }
+    )
       or return $self->set_error("store(): save() failed " . MongoDB::Database::last_error());
     return 1;
 }
