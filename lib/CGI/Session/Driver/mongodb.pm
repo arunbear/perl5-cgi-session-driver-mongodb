@@ -1,7 +1,7 @@
 package CGI::Session::Driver::mongodb;
 
 use base 'CGI::Session::Driver';
-use Carp;
+use Carp qw/cluck croak/;
 use MongoDB;
 
 sub init {
@@ -41,8 +41,10 @@ sub retrieve {
 
 sub remove {
     my ($self, $sid) = @_;
+    my $ret = $self->{sessions}->remove({ sid => $sid }, { safe => 1 });
     # Remove storage associated with $sid. Return any true value indicating success,
     # or undef on failure.
+    return $ret ? $ret : undef;
 }
 
 sub traverse {
