@@ -13,8 +13,10 @@ sub init {
     }
     my $conn = MongoDB::Connection->new(%arg);
     my $db = $conn->get_database($self->{database});
-    $self->{sessions} = $db->get_collection($self->{collection_name} || 'sessions');
-    $self->{sessions}->ensure_index({ sid => 1 }, { unique => true });
+    $self->{sessions} = $db->get_collection($self->{CollectionName} || 'sessions');
+    $self->{IdFieldName} ||= 'id';
+    $self->{DataFieldName} ||= 'datastr';
+    $self->{sessions}->ensure_index({ $self->{IdFieldName} => 1 }, { unique => true });
 }
 
 sub store {
@@ -22,8 +24,8 @@ sub store {
     croak "store(): usage error" unless $sid && $datastr;
     # Store $datastr, which is an already serialized string of data.
     $self->{sessions}->update(
-        { sid => $sid }, 
-        { '$set' =>  { datastr => $datastr } }, 
+        { $self->{IdFieldName} => $sid }, 
+        { '$set' =>  { $self->{DataFieldName} => $datastr } }, 
         { 'upsert' => 1, safe => 1 }
     )
       or return $self->set_error("store(): save() failed " . MongoDB::Database::last_error());
@@ -34,14 +36,14 @@ sub retrieve {
     my ($self, $sid) = @_;
     # Return $datastr, which was previously stored using above store() method.
     # Return $datastr if $sid was found. Return 0 or "" if $sid doesn't exist
-    my $doc = $self->{sessions}->find_one({ sid => $sid });
+    my $doc = $self->{sessions}->find_one({ $self->{IdFieldName} => $sid });
     return 0 unless $doc;
-    return $doc->{datastr};
+    return $doc->{$self->{DataFieldName}};
 }
 
 sub remove {
     my ($self, $sid) = @_;
-    my $ret = $self->{sessions}->remove({ sid => $sid }, { safe => 1 });
+    my $ret = $self->{sessions}->remove({ $self->{IdFieldName} => $sid }, { safe => 1 });
     # Remove storage associated with $sid. Return any true value indicating success,
     # or undef on failure.
     return $ret ? $ret : undef;
@@ -51,6 +53,11 @@ sub traverse {
     my ($self, $coderef) = @_;
     # execute $coderef for each session id passing session id as the first and the only
     # argument
+    my $cursor = $self->{sessions}->find();
+    while (my $doc = $cursor->next) {
+        $coderef->($doc->{$self->{IdFieldName}});
+    }
+    $cursor->reset;
 }
 
 1; # End of CGI::Session::Driver::mongodb
