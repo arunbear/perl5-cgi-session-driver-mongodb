@@ -12,7 +12,7 @@ sub init {
         $arg{host} = $self->{host};
     }
     my $conn = MongoDB::Connection->new(%arg);
-    my $db = $conn->get_database($self->{database});
+    my $db = $conn->get_database($self->{Database});
     $self->{sessions} = $db->get_collection($self->{CollectionName} || 'sessions');
     $self->{IdFieldName} ||= 'id';
     $self->{DataFieldName} ||= 'datastr';
