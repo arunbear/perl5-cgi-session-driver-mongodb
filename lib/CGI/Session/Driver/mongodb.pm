@@ -2,6 +2,7 @@ package CGI::Session::Driver::mongodb;
 
 use base 'CGI::Session::Driver';
 use Carp qw/cluck croak/;
+#use Carp::Assert;
 use MongoDB;
 
 sub init {
@@ -22,10 +23,18 @@ sub init {
 sub store {
     my ($self, $sid, $datastr) = @_;
     croak "store(): usage error" unless $sid && $datastr;
+
+    my %timestamp;
+    
+    if($self->{AddTimeStamp}) {
+        $self->{TimeStampFieldName} ||= 'mtime';
+        $self->{sessions}->ensure_index({ $self->{TimeStampFieldName} => 1 });
+        %timestamp = ($self->{TimeStampFieldName} => time());
+    }
     # Store $datastr, which is an already serialized string of data.
     $self->{sessions}->update(
         { $self->{IdFieldName} => $sid }, 
-        { '$set' =>  { $self->{DataFieldName} => $datastr } }, 
+        { '$set' =>  { $self->{DataFieldName} => $datastr, %timestamp } }, 
         { 'upsert' => 1, safe => 1 }
     )
       or return $self->set_error("store(): save() failed " . MongoDB::Database::last_error());

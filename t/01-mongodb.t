@@ -33,6 +33,7 @@ sub tests_with_options {
         CollectionName => 'my_sessions',
         IdFieldName    => 'my_id',
         DataFieldName  => 'my_data', 
+        AddTimeStamp   => 1,
     );
     diag "tests_with_options:"; 
     diag explain \%Options;
