@@ -8,10 +8,12 @@ use MongoDB;
 sub init {
     my $self = shift;
 
-    my %arg;
-    if($self->{host}) {
-        $arg{host} = $self->{host};
-    }
+    my @connect_args = qw(
+        host    w        wtimeout auto_reconnect auto_connect 
+        timeout username password db_name        query_timeout
+    );
+    my %arg = map { $_ => $self->{$_} } grep { $self->{$_} } @connect_args;
+
     my $conn = MongoDB::Connection->new(%arg);
     my $db = $conn->get_database($self->{Database});
     $self->{sessions} = $db->get_collection($self->{CollectionName} || 'sessions');
